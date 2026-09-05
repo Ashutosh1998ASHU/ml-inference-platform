@@ -21,4 +21,4 @@ mlartifacts/
 *.egg-info/
 
 dist/
-build/
+ml/artifacts/
