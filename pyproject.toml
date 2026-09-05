@@ -1,0 +1,21 @@
+[project]
+name = "ml-inference-platform"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.141.1",
+    "httpx>=0.28.1",
+    "joblib>=1.6.0",
+    "mlflow>=3.16.0",
+    "numpy>=2.5.2",
+    "pandas>=3.0.5",
+    "prometheus-fastapi-instrumentator>=8.1.0",
+    "pydantic>=2.13.5",
+    "scikit-learn>=1.9.0",
+    "uvicorn[standard]>=0.52.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
