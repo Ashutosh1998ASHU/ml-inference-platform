@@ -14,6 +14,7 @@ from sklearn.metrics import (
 )
 
 import pandas as pd
+import mlflow
 import joblib
 
 DATASET_PATH = Path("ml/data/churn.csv")
@@ -43,6 +44,9 @@ CATEGORICAL_FEATURES = [
 
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
+
+MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+MLFLOW_EXPERIMENT_NAME = "customer-churn-prediction"
 
 def load_dataset() -> pd.DataFrame:
     if not DATASET_PATH.exists():
@@ -164,37 +168,56 @@ def save_model(model_pipeline: Pipeline) -> None:
     print(f"\nModel saved to: {MODEL_PATH}")
 
 def main() -> None:
-    print("Loading dataset...")
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
-    dataframe = load_dataset()
+    with mlflow.start_run():
+        print("Loading dataset...")
+        dataframe = load_dataset()
+        print(f"Dataset shape: {dataframe.shape}")
 
-    print(f"Dataset shape: {dataframe.shape}")
+        X_train, X_test, y_train, y_test = split_dataset(
+            dataframe
+        )
 
-    X_train, X_test, y_train, y_test = split_dataset(
-        dataframe
-    )
+        print(f"Training samples: {len(X_train)}")
+        print(f"Test samples: {len(X_test)}")
 
-    print(f"Training samples: {len(X_train)}")
-    print(f"Test samples: {len(X_test)}")
+        model_pipeline = build_model_pipeline()
 
-    model_pipeline = build_model_pipeline()
+        print("\nTraining model...")
 
-    print("\nTraining model...")
+        model_pipeline = train_model(
+            model_pipeline,
+            X_train,
+            y_train,
+        )
 
-    model_pipeline = train_model(
-        model_pipeline,
-        X_train,
-        y_train,
-    )
+        metrics = evaluate_model(
+            model_pipeline,
+            X_test,
+            y_test,
+        )
 
-    evaluate_model(
-        model_pipeline,
-        X_test,
-        y_test,
-    )
+        mlflow.log_params(
+            {
+                "model": "LogisticRegression",
+                "random_state": RANDOM_STATE,
+                "test_size": TEST_SIZE,
+                "max_iter": 1000,
+            }
+        )
 
-    save_model(model_pipeline)
+        mlflow.log_metrics(metrics)
 
+        mlflow.sklearn.log_model(
+            model_pipeline,
+            name="churn_model",
+        )
+
+        save_model(model_pipeline)
+
+        print(f"\nMLflow Run ID: {mlflow.active_run().info.run_id}")
 
 if __name__ == "__main__":
     main()
